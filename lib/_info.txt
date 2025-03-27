@@ -1,0 +1,2 @@
+if gradle doesnt build on emulator, run following in project gradle folder
+./gradlew --stop

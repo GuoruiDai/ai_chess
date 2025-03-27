@@ -1,90 +1,93 @@
 // import 'package:flutter/material.dart';
 // import 'package:stockfish/stockfish.dart';
 
+
 // void main() {
-//   runApp(const ChessEngineDemo());
+//   runApp(const MyApp());
 // }
 
-// class ChessEngineDemo extends StatefulWidget {
-//   const ChessEngineDemo({super.key});
-
+// class MyApp extends StatefulWidget {
+//   const MyApp({super.key});
 //   @override
-//   State<ChessEngineDemo> createState() => _ChessEngineDemoState();
+//   State<StatefulWidget> createState() => _AppState();
 // }
 
-// class _ChessEngineDemoState extends State<ChessEngineDemo> {
-//   final Stockfish stockfish = Stockfish();
-//   List<String> engineOutput = [];
-//   bool isEngineReady = false;
+// class _AppState extends State<MyApp> {
+//   late Stockfish stockfish;
 
 //   @override
 //   void initState() {
 //     super.initState();
-//     _initEngine();
-//   }
-
-//   void _initEngine() async {
-//     // Wait for engine to initialize
-//     await Future.delayed(const Duration(milliseconds: 500));
-
-//     // Listen for engine state changes
-//     stockfish.state.addListener(() {
-//       if (stockfish.state.value == StockfishState.ready) {
-//         setState(() => isEngineReady = true);
-//         _analyzePawnMove();
-//       }
-//     });
-
-//     // Capture engine output
-//     stockfish.stdout.listen((String line) {
-//       setState(() => engineOutput.add(line));
-//       print("Stockfish: $line"); // Debug print
-//     });
-//   }
-
-//   void _analyzePawnMove() {
-//     if (!isEngineReady) return;
-
-//     // 1. Set up the starting position (pawn to e4)
-//     stockfish.stdin = 'position startpos moves e2e4';
-
-//     // 2. Request analysis for 2 seconds
-//     stockfish.stdin = 'go movetime 2000';
-//   }
-
-//   @override
-//   void dispose() {
-//     stockfish.dispose(); // Clean up the engine
-//     super.dispose();
+//     stockfish = Stockfish();
 //   }
 
 //   @override
 //   Widget build(BuildContext context) {
 //     return MaterialApp(
 //       home: Scaffold(
-//         appBar: AppBar(title: const Text('Stockfish Demo - Pawn to e4')),
-//         body: Padding(
-//           padding: const EdgeInsets.all(16.0),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 'Engine Status: ${isEngineReady ? "Ready" : "Loading..."}',
-//                 style: const TextStyle(fontSize: 18),
-//               ),
-//               const SizedBox(height: 20),
-//               const Text(
-//                 'Stockfish Output:',
-//                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-//               ),
-//               Expanded(
-//                 child: ListView.builder(
-//                   itemCount: engineOutput.length,
-//                   itemBuilder: (context, index) => Text(engineOutput[index]),
+//         appBar: AppBar(
+//           title: const Text('Stockfish example app'),
+//         ),
+//         body: Column(
+//           children: [
+//             Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: AnimatedBuilder(
+//                 animation: stockfish.state,
+//                 builder: (_, __) => Text(
+//                   'stockfish.state=${stockfish.state.value}',
+//                   key: const ValueKey('stockfish.state'),
 //                 ),
 //               ),
-//             ],
-//           ),
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: AnimatedBuilder(
+//                 animation: stockfish.state,
+//                 builder: (_, __) => ElevatedButton(
+//                   onPressed: stockfish.state.value == StockfishState.disposed
+//                       ? () {
+//                           final newInstance = Stockfish();
+//                           setState(() => stockfish = newInstance);
+//                         }
+//                       : null,
+//                   child: const Text('Reset Stockfish instance'),
+//                 ),
+//               ),
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: TextField(
+//                 autocorrect: false,
+//                 decoration: const InputDecoration(
+//                   labelText: 'Custom UCI command',
+//                   hintText: 'go infinite',
+//                 ),
+//                 onSubmitted: (value) => stockfish.stdin = value,
+//                 textInputAction: TextInputAction.send,
+//               ),
+//             ),
+//             Wrap(
+//               children: [
+//                 'd',
+//                 'isready',
+//                 'go infinite',
+//                 'go movetime 3000',
+//                 'stop',
+//                 'quit',
+//               ]
+//                   .map(
+//                     (command) => Padding(
+//                       padding: const EdgeInsets.all(8.0),
+//                       child: ElevatedButton(
+//                         onPressed: () => stockfish.stdin = command,
+//                         child: Text(command),
+//                       ),
+//                     ),
+//                   )
+//                   .toList(growable: false),
+//             ),
+//           ],
 //         ),
 //       ),
 //     );
