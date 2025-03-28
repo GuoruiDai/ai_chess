@@ -29,7 +29,6 @@ class StockfishEngine {
 
   void getMove(String fen) {
     if (!_isReady) return;
-    
     stockfish.stdin = 'position fen $fen';
     stockfish.stdin = 'go movetime 1000';
   }

@@ -12,8 +12,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   # stockfish 1.7.0 keeps giving error and can't launch
   stockfish: 1.5.0
-  ffi: ^2.1.4
-  logging: ^1.3.0
 
 dev_dependencies:
   flutter_test:
