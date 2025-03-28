@@ -17,6 +17,7 @@ class _GamePageState extends State<GamePage> {
   List<chess_lib.Move> validMoves = [];
   bool isPlayerAsBlack = false;
   bool gameStarted = false;
+  int _opponentElo = 2000;
   late StockfishEngine stockfishEngine;
   bool isEngineThinking = false;
 
@@ -83,7 +84,7 @@ class _GamePageState extends State<GamePage> {
     if (!isEngineThinking) {
       setState(() => isEngineThinking = true);
       final fen = chess.fen;
-      stockfishEngine.getMove(fen);
+      stockfishEngine.getMove(fen, _opponentElo);
     }
   }
 
@@ -199,6 +200,29 @@ class _GamePageState extends State<GamePage> {
               color: Colors.red,
               fontSize: 24,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (!gameStarted) Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            child: Column(
+              children: [
+                Text(
+                  'Engine Strength: ${_opponentElo == 3600 ? '3600+' : 'ELO $_opponentElo'}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Slider(
+                  value: _opponentElo.toDouble(),
+                  min: 1200,
+                  max: 3600,
+                  divisions: 6, // (3600-1200)/400 = 6 steps
+                  label: _opponentElo == 3600 ? '3600' : 'ELO $_opponentElo',
+                  onChanged: (value) {
+                    setState(() {
+                      _opponentElo = value.round();
+                    });
+                  },
+                ),
+              ],
             ),
           ),
           Expanded(

@@ -27,10 +27,19 @@ class StockfishEngine {
     }
   }
 
-  void getMove(String fen) {
+  void getMove(String fen, int elo) {
     if (!_isReady) return;
+    
+    // Set strength before calculating move
+    if (elo >= 3600) {
+      stockfish.stdin = 'setoption name UCI_LimitStrength value false';
+    } else {
+      stockfish.stdin = 'setoption name UCI_LimitStrength value true';
+      stockfish.stdin = 'setoption name UCI_Elo value ${elo.clamp(1320, 3190)}';
+    }
+    
     stockfish.stdin = 'position fen $fen';
-    stockfish.stdin = 'go movetime 1000';
+    stockfish.stdin = 'go movetime 2000';
   }
 
   void dispose() {
