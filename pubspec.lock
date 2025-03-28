@@ -58,7 +58,7 @@ packages:
     source: hosted
     version: "1.3.2"
   ffi:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ffi
       sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
@@ -115,6 +115,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
+  logging:
+    dependency: "direct main"
+    description:
+      name: logging
+      sha256: c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   matcher:
     dependency: transitive
     description:
@@ -147,14 +155,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
-  plugin_platform_interface:
-    dependency: transitive
-    description:
-      name: plugin_platform_interface
-      sha256: "4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.8"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -176,14 +176,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.1"
-  stockfish_chess_engine:
+  stockfish:
     dependency: "direct main"
     description:
-      name: stockfish_chess_engine
-      sha256: "9349400ad696900b731c40d50c8459475f6739c07da0018a948de79f3c1d5b9d"
+      name: stockfish
+      sha256: "313df6e525c98c967ad7a89d4c13e35fb43e5df4c31defe9e14f77456046d362"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.2"
+    version: "1.5.0"
   stream_channel:
     dependency: transitive
     description:

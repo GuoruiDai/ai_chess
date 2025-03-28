@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'gamePage.dart';
+import 'game_page.dart';
 
-
-// for flutter chess: iOS project must have IPHONEOS_DEPLOYMENT_TARGET >=12.0.
 
 
 void main() {

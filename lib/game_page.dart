@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chess.dart' as chess_lib;
-import 'chessBoard.dart';
+import 'chess_board.dart';
 
 
 class GamePage extends StatefulWidget {
@@ -14,7 +14,7 @@ class _GamePageState extends State<GamePage> {
   late chess_lib.Chess chess;
   int? selectedSquare;
   List<chess_lib.Move> validMoves = [];
-  bool isBoardFlipped = false;
+  bool isPlayerAsBlack = false;
 
   @override
   void initState() {
@@ -91,10 +91,10 @@ class _GamePageState extends State<GamePage> {
             },
           ),
           IconButton(
-            icon: Icon(isBoardFlipped ? Icons.rotate_90_degrees_ccw : Icons.rotate_90_degrees_cw),
+            icon: Icon(isPlayerAsBlack ? Icons.rotate_90_degrees_ccw : Icons.rotate_90_degrees_cw),
             onPressed: () {
               setState(() {
-                isBoardFlipped = !isBoardFlipped;
+                isPlayerAsBlack = !isPlayerAsBlack;
               });
             },
           ),
@@ -115,7 +115,7 @@ class _GamePageState extends State<GamePage> {
               chess: chess,
               selectedSquare: selectedSquare,
               validMoves: validMoves,
-              isFlipped: isBoardFlipped,
+              isFlipped: isPlayerAsBlack,
               onSquareSelected: _handleSquareTap,
             ),
           ),
