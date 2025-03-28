@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:stockfish/stockfish.dart';
+import 'stockfish_engine.dart';
 import 'chess.dart' as chess_lib;
 import 'chess_board.dart';
+
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -16,7 +17,7 @@ class _GamePageState extends State<GamePage> {
   List<chess_lib.Move> validMoves = [];
   bool isPlayerAsBlack = false;
   bool gameStarted = false;
-  late Stockfish stockfish;
+  late StockfishEngine stockfishEngine;
   bool isEngineThinking = false;
 
   @override
@@ -27,13 +28,9 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _initStockfish() async {
-    stockfish = Stockfish();
-    stockfish.stdout.listen(_handleEngineResponse);
-    
-    // Wait until engine is ready
-    while (stockfish.state.value != StockfishState.ready) {
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
+    stockfishEngine = StockfishEngine();
+    stockfishEngine.onBestMoveReceived = _handleEngineMove;
+    await stockfishEngine.initialize();
   }
 
   void _initializeGame() {
@@ -52,16 +49,6 @@ class _GamePageState extends State<GamePage> {
         _getEngineMove();
       }
     });
-  }
-
-  void _handleEngineResponse(String line) {
-    if (line.startsWith('bestmove ')) {
-      final parts = line.split(' ');
-      if (parts.length >= 2) {
-        final moveUci = parts[1];
-        _handleEngineMove(moveUci);
-      }
-    }
   }
 
   void _handleEngineMove(String moveUci) {
@@ -93,11 +80,10 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _getEngineMove() {
-    if (!isEngineThinking && stockfish.state.value == StockfishState.ready) {
+    if (!isEngineThinking) {
       setState(() => isEngineThinking = true);
       final fen = chess.fen;
-      stockfish.stdin = 'position fen $fen';
-      stockfish.stdin = 'go movetime 1000';
+      stockfishEngine.getMove(fen);
     }
   }
 
@@ -171,8 +157,7 @@ class _GamePageState extends State<GamePage> {
 
   @override
   void dispose() {
-    stockfish.stdin = 'quit'; // Properly shut down the engine
-    stockfish.dispose();
+    stockfishEngine.dispose();
     super.dispose();
   }
 
