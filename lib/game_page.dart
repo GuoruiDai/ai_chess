@@ -28,7 +28,6 @@ class _GamePageState extends State<GamePage> {
 
   void _initStockfish() async {
     stockfish = Stockfish();
-    // Listen to engine output
     stockfish.stdout.listen(_handleEngineResponse);
     
     // Wait until engine is ready
@@ -137,7 +136,7 @@ class _GamePageState extends State<GamePage> {
 
     if (chess.game_over) {
       _showGameOverDialog();
-    } else if (!chess.game_over && mounted) {
+    } else if (mounted) {
       // Check if engine should respond
       final isEngineTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE) ||
                           (!isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK);
