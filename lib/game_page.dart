@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'chess.dart' as chess_lib;
 import 'chess_board.dart';
 
-
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
@@ -15,6 +14,7 @@ class _GamePageState extends State<GamePage> {
   int? selectedSquare;
   List<chess_lib.Move> validMoves = [];
   bool isPlayerAsBlack = false;
+  bool gameStarted = false; // Track if game has started
 
   @override
   void initState() {
@@ -26,9 +26,22 @@ class _GamePageState extends State<GamePage> {
     chess = chess_lib.Chess();
     selectedSquare = null;
     validMoves = [];
+    gameStarted = false; // Reset game state
+  }
+
+  void _startGame() {
+    setState(() {
+      gameStarted = true;
+    });
   }
 
   void _handleSquareTap(int square) {
+    if (!gameStarted) return;
+    final piece = chess.board[square];
+    if (piece != null && piece.color != (isPlayerAsBlack ? chess_lib.Color.BLACK : chess_lib.Color.WHITE)) {
+      return;
+    }
+
     setState(() {
       final moves = chess.generate_moves({'square': chess_lib.Chess.algebraic(square)});
       
@@ -54,6 +67,7 @@ class _GamePageState extends State<GamePage> {
     if (chess.game_over) {
       _showGameOverDialog();
     }
+    setState(() {}); // Update UI after move
   }
 
   void _showGameOverDialog() {
@@ -90,7 +104,8 @@ class _GamePageState extends State<GamePage> {
               setState(() {});
             },
           ),
-          IconButton(
+          // Only show flip button if game hasn't started
+          if (!gameStarted) IconButton(
             icon: Icon(isPlayerAsBlack ? Icons.rotate_90_degrees_ccw : Icons.rotate_90_degrees_cw),
             onPressed: () {
               setState(() {
@@ -127,6 +142,14 @@ class _GamePageState extends State<GamePage> {
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+          // Start game button (only shown when game hasn't started)
+          if (!gameStarted) Padding(
+            padding: const EdgeInsets.only(bottom: 20.0),
+            child: ElevatedButton(
+              onPressed: _startGame,
+              child: const Text('Start Game'),
             ),
           ),
         ],
