@@ -10,6 +10,8 @@ class Square extends StatelessWidget {
   final VoidCallback? onTap;
   final String? rankLabel;
   final String? fileLabel;
+  final bool isInCheck;
+  final Color checkHighlightColor;
 
   const Square({
     super.key,
@@ -20,6 +22,8 @@ class Square extends StatelessWidget {
     required this.onTap,
     this.rankLabel,
     this.fileLabel,
+    this.isInCheck = false,
+    this.checkHighlightColor = const Color(0x55FF0000),
   });
 
   String _getPieceImage(chess_lib.PieceType type) {
@@ -50,6 +54,14 @@ class Square extends StatelessWidget {
           Container(
             color: baseColor,
           ),
+          
+          // Check highlight
+          if (isInCheck)
+            Positioned.fill(
+              child: Container(
+                color: checkHighlightColor,
+              ),
+            ),
           
           // Glow effect for both selected square and valid moves
           if (isSelected || isValidMove)
@@ -128,6 +140,8 @@ class ChessBoard extends StatelessWidget {
   final List<chess_lib.Move> validMoves;
   final bool isFlipped;
   final void Function(int)? onSquareSelected;
+  final int? checkHighlight;
+  final Color checkHighlightColor;
 
   const ChessBoard({
     super.key,
@@ -136,6 +150,8 @@ class ChessBoard extends StatelessWidget {
     required this.validMoves,
     required this.isFlipped,
     required this.onSquareSelected,
+    this.checkHighlight,
+    this.checkHighlightColor = const Color(0x55FF0000),
   });
 
   int _gridIndexToSquare(int index) {
@@ -166,6 +182,7 @@ class ChessBoard extends StatelessWidget {
         final piece = chess.board[square];
         final isSelected = selectedSquare == square;
         final isValidMove = validMoves.any((m) => m.to == square);
+        final isInCheck = checkHighlight == square;
 
         final file = square % 16;
         final rank = square ~/ 16;
@@ -174,7 +191,6 @@ class ChessBoard extends StatelessWidget {
         // Determine rank label (only for leftmost column)
         String? rankLabel;
         if (gridCol == 0) {
-          // Rank labels are always 8-1 from top to bottom
           final rankNumber = isFlipped ? (gridRow + 1) : (8 - gridRow);
           rankLabel = rankNumber.toString();
         }
@@ -182,7 +198,6 @@ class ChessBoard extends StatelessWidget {
         // Determine file label (only for bottom row)
         String? fileLabel;
         if (gridRow == 7) {
-          // File labels are always a-h from left to right
           final fileChar = isFlipped ? 
               String.fromCharCode(104 - gridCol) : // 'h' (ASCII 104) down to 'a'
               String.fromCharCode(97 + gridCol);   // 'a' (ASCII 97) up to 'h'
@@ -197,6 +212,8 @@ class ChessBoard extends StatelessWidget {
           onTap: () => onSquareSelected?.call(square),
           rankLabel: rankLabel,
           fileLabel: fileLabel,
+          isInCheck: isInCheck,
+          checkHighlightColor: checkHighlightColor,
         );
       },
     );

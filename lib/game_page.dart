@@ -3,7 +3,6 @@ import 'stockfish_engine.dart';
 import 'chess.dart' as chess_lib;
 import 'chess_board.dart';
 
-
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
 
@@ -13,12 +12,12 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   late chess_lib.Chess chess;
+  late StockfishEngine stockfishEngine;  
+  bool gameStarted = false;
+  bool isPlayerAsBlack = false;
+  int _opponentElo = 2000;
   int? selectedSquare;
   List<chess_lib.Move> validMoves = [];
-  bool isPlayerAsBlack = false;
-  bool gameStarted = false;
-  int _opponentElo = 2000;
-  late StockfishEngine stockfishEngine;
   bool isEngineThinking = false;
 
   @override
@@ -36,16 +35,15 @@ class _GamePageState extends State<GamePage> {
 
   void _initializeGame() {
     chess = chess_lib.Chess();
+    gameStarted = false;    
     selectedSquare = null;
     validMoves = [];
-    gameStarted = false;
     isEngineThinking = false;
   }
 
   void _startGame() {
     setState(() {
       gameStarted = true;
-      // If player is black, engine makes first move
       if (isPlayerAsBlack) {
         _getEngineMove();
       }
@@ -53,12 +51,10 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _handleEngineMove(String moveUci) {
-    // Parse UCI move (e.g. 'e2e4' or 'h7h8q')
     final from = moveUci.substring(0, 2);
     final to = moveUci.substring(2, 4);
     final promotion = moveUci.length > 4 ? moveUci[4].toLowerCase() : null;
 
-    // Find matching legal move
     final moves = chess.generate_moves();
     chess_lib.Move? engineMove;
     
@@ -124,7 +120,6 @@ class _GamePageState extends State<GamePage> {
     if (chess.game_over) {
       _showGameOverDialog();
     } else if (mounted) {
-      // Check if engine should respond
       final isEngineTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE) ||
                           (!isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK);
       
@@ -137,13 +132,11 @@ class _GamePageState extends State<GamePage> {
   void _handleUndo() {
     if (!gameStarted || isEngineThinking) return;
 
-    // Check if it's the player's turn
     final isPlayerTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
                         (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE);
     
     if (!isPlayerTurn) return;
 
-    // Undo twice to go back to player's turn
     final firstUndo = chess.undo_move();
     final secondUndo = chess.undo_move();
 
@@ -153,6 +146,18 @@ class _GamePageState extends State<GamePage> {
         validMoves = [];
       });
     }
+  }
+
+  int? _getKingSquare(chess_lib.Color color) {
+    for (int square = 0; square < 128; square++) {
+      final piece = chess.board[square];
+      if (piece != null && 
+          piece.type == chess_lib.PieceType.KING && 
+          piece.color == color) {
+        return square;
+      }
+    }
+    return null;
   }
 
   void _showGameOverDialog() {
@@ -187,23 +192,14 @@ class _GamePageState extends State<GamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: isEngineThinking 
-            ? const Text("Engine is thinking...") 
-            : const Text("Chess Game"),
+        title: isEngineThinking
+            ? const Text("Engine is thinking...")
+            : const Text(''),
         actions: [
           if (isEngineThinking)
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
-            ),
-          // Show undo button only during player's turn
-          if (gameStarted && 
-              ((isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
-               (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE)))
-            IconButton(
-              icon: const Icon(Icons.undo),
-              onPressed: _handleUndo,
-              tooltip: 'Undo last move',
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -224,16 +220,11 @@ class _GamePageState extends State<GamePage> {
       ),
       body: Column(
         children: [
-          Text(
-            chess.in_check ? "CHECK!" : "",
-            style: const TextStyle(
-              color: Colors.red,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          // Fixed space between app bar and board
+          const SizedBox(height: 16),
+          // Engine strength slider (only visible before game starts)
           if (!gameStarted) Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               children: [
                 Text(
@@ -244,7 +235,7 @@ class _GamePageState extends State<GamePage> {
                   value: _opponentElo.toDouble(),
                   min: 1200,
                   max: 3600,
-                  divisions: 6, // (3600-1200)/400 = 6 steps
+                  divisions: 6,
                   label: _opponentElo == 3600 ? '3600' : 'ELO $_opponentElo',
                   onChanged: (value) {
                     setState(() {
@@ -255,7 +246,9 @@ class _GamePageState extends State<GamePage> {
               ],
             ),
           ),
-          Expanded(
+          // Fixed aspect ratio container for the chess board
+          AspectRatio(
+            aspectRatio: 1,
             child: AbsorbPointer(
               absorbing: isEngineThinking,
               child: ChessBoard(
@@ -264,16 +257,38 @@ class _GamePageState extends State<GamePage> {
                 validMoves: validMoves,
                 isFlipped: isPlayerAsBlack,
                 onSquareSelected: _handleSquareTap,
+                checkHighlight: chess.in_check ? _getKingSquare(chess.turn) : null,
+                checkHighlightColor: const Color.fromARGB(160, 255, 60, 60),
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              "Turn: ${chess.turn == chess_lib.Color.WHITE ? 'White' : 'Black'}",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+          // Fixed height row for buttons below the board
+          SizedBox(
+            height: 48,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Undo button (left side)
+                  if (gameStarted && 
+                      ((isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
+                       (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE)))
+                    TextButton(
+                      onPressed: _handleUndo,
+                      child: const Text('Undo'),
+                    )
+                  else
+                    const TextButton(
+                      onPressed: null,
+                      child: Text(''),
+                    ),
+                  // Placeholder button (right side)
+                  const TextButton(
+                    onPressed: null,
+                    child: Text('Placeholder'),
+                  ),
+                ],
               ),
             ),
           ),
