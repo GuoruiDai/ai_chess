@@ -12,7 +12,7 @@ class StockfishEngine {
     
     // Wait until engine is ready
     while (stockfish.state.value != StockfishState.ready) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 200));
     }
     _isReady = true;
   }
@@ -35,11 +35,10 @@ class StockfishEngine {
       stockfish.stdin = 'setoption name UCI_LimitStrength value false';
     } else {
       stockfish.stdin = 'setoption name UCI_LimitStrength value true';
-      stockfish.stdin = 'setoption name UCI_Elo value ${elo.clamp(1320, 3190)}';
+      stockfish.stdin = 'setoption name UCI_Elo value $elo';
     }
-    
     stockfish.stdin = 'position fen $fen';
-    stockfish.stdin = 'go movetime 2000';
+    stockfish.stdin = 'go movetime 3000';
   }
 
   void dispose() {

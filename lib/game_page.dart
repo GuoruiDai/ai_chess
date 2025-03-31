@@ -134,6 +134,27 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  void _handleUndo() {
+    if (!gameStarted || isEngineThinking) return;
+
+    // Check if it's the player's turn
+    final isPlayerTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
+                        (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE);
+    
+    if (!isPlayerTurn) return;
+
+    // Undo twice to go back to player's turn
+    final firstUndo = chess.undo_move();
+    final secondUndo = chess.undo_move();
+
+    if (firstUndo != null && secondUndo != null) {
+      setState(() {
+        selectedSquare = null;
+        validMoves = [];
+      });
+    }
+  }
+
   void _showGameOverDialog() {
     showDialog(
       context: context,
@@ -174,6 +195,15 @@ class _GamePageState extends State<GamePage> {
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
+            ),
+          // Show undo button only during player's turn
+          if (gameStarted && 
+              ((isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
+               (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE)))
+            IconButton(
+              icon: const Icon(Icons.undo),
+              onPressed: _handleUndo,
+              tooltip: 'Undo last move',
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
