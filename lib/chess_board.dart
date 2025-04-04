@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'chess.dart' as chess_lib;
 
-
 class Square extends StatelessWidget {
-  final bool isValidMove;
+  final bool isHighlighted;
   final bool isSelected;
   final bool isWhiteSquare;
   final chess_lib.Piece? piece;
@@ -11,11 +10,12 @@ class Square extends StatelessWidget {
   final String? rankLabel;
   final String? fileLabel;
   final bool isInCheck;
+  final Color highlightColor;
   final Color checkHighlightColor;
 
   const Square({
     super.key,
-    required this.isValidMove,
+    required this.isHighlighted,
     required this.isSelected,
     required this.isWhiteSquare,
     required this.piece,
@@ -23,6 +23,7 @@ class Square extends StatelessWidget {
     this.rankLabel,
     this.fileLabel,
     this.isInCheck = false,
+    this.highlightColor = const Color(0x5533B5E5),
     this.checkHighlightColor = const Color(0x55FF0000),
   });
 
@@ -43,65 +44,49 @@ class Square extends StatelessWidget {
     Color baseColor = isWhiteSquare 
         ? const Color.fromARGB(255, 218, 218, 218) 
         : const Color.fromARGB(255, 53, 54, 56);
-    final glowColor = const Color.fromARGB(195, 255, 255, 255);
-    final blueTint = const Color.fromARGB(171, 63, 119, 216);
 
     return GestureDetector(
       onTap: onTap,
       child: Stack(
         children: [
-          // Base square
-          Container(
-            color: baseColor,
-          ),
+          Container(color: baseColor),
           
-          // Check highlight
           if (isInCheck)
             Positioned.fill(
-              child: Container(
-                color: checkHighlightColor,
-              ),
+              child: Container(color: checkHighlightColor),
             ),
           
-          // Glow effect for both selected square and valid moves
-          if (isSelected || isValidMove)
+          if (isHighlighted || isSelected)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  border: Border.all(
-                    color: glowColor,
-                    width: 0.1,
-                  ),
+                  color: isHighlighted ? highlightColor : Colors.transparent,
+                  border: isSelected 
+                      ? Border.all(color: highlightColor, width: 2) 
+                      : null,
                   boxShadow: [
-                    BoxShadow(
-                      color: blueTint,
-                      spreadRadius: 1.5,
-                      blurRadius: 2.0,
-                    ),
-                    BoxShadow(
-                      color: glowColor,
-                      spreadRadius: 0.5,
-                      blurRadius: 2.0,
-                    ),
+                    if (isHighlighted || isSelected)
+                      BoxShadow(
+                        color: Color.fromARGB(139, 138, 138, 138),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                      ),
                   ],
                 ),
               ),
             ),
           
-          // Piece image
           if (piece != null)
             Positioned.fill(
               child: Image.asset(
                 _getPieceImage(piece!.type),
                 color: piece!.color == chess_lib.Color.WHITE 
                     ? Colors.white 
-                    : const Color.fromARGB(255, 109, 109, 109),
+                    : Color.fromARGB(255, 109, 109, 109),
                 colorBlendMode: BlendMode.modulate,
               ),
             ),
           
-          // Labels
           if (rankLabel != null)
             Positioned(
               left: 4,
@@ -141,7 +126,7 @@ class ChessBoard extends StatelessWidget {
   final bool isFlipped;
   final void Function(int)? onSquareSelected;
   final int? checkHighlight;
-  final Color checkHighlightColor;
+  final chess_lib.Move? lastMove;
 
   const ChessBoard({
     super.key,
@@ -151,19 +136,13 @@ class ChessBoard extends StatelessWidget {
     required this.isFlipped,
     required this.onSquareSelected,
     this.checkHighlight,
-    this.checkHighlightColor = const Color(0x55FF0000),
+    this.lastMove,
   });
 
   int _gridIndexToSquare(int index) {
     final row = index ~/ 8;
     final col = index % 8;
-    
-    if (isFlipped) {
-      final flippedRow = 7 - row;
-      final flippedCol = 7 - col;
-      return flippedRow * 16 + flippedCol;
-    }
-    return row * 16 + col;
+    return isFlipped ? (7 - row) * 16 + (7 - col) : row * 16 + col;
   }
 
   @override
@@ -175,45 +154,27 @@ class ChessBoard extends StatelessWidget {
       ),
       itemCount: 64,
       itemBuilder: (context, index) {
-        final gridRow = index ~/ 8;
-        final gridCol = index % 8;
-        
         final square = _gridIndexToSquare(index);
-        final piece = chess.board[square];
-        final isSelected = selectedSquare == square;
+        final isFrom = lastMove?.from == square;
+        final isTo = lastMove?.to == square;
         final isValidMove = validMoves.any((m) => m.to == square);
-        final isInCheck = checkHighlight == square;
-
-        final file = square % 16;
-        final rank = square ~/ 16;
-        final isWhiteSquare = (rank + file) % 2 == 0;
-
-        // Determine rank label (only for leftmost column)
-        String? rankLabel;
-        if (gridCol == 0) {
-          final rankNumber = isFlipped ? (gridRow + 1) : (8 - gridRow);
-          rankLabel = rankNumber.toString();
-        }
-
-        // Determine file label (only for bottom row)
-        String? fileLabel;
-        if (gridRow == 7) {
-          final fileChar = isFlipped ? 
-              String.fromCharCode(104 - gridCol) : // 'h' (ASCII 104) down to 'a'
-              String.fromCharCode(97 + gridCol);   // 'a' (ASCII 97) up to 'h'
-          fileLabel = fileChar;
-        }
 
         return Square(
-          isValidMove: isValidMove,
-          isSelected: isSelected,
-          isWhiteSquare: isWhiteSquare,
-          piece: piece,
+          isHighlighted: isFrom || isTo || isValidMove,
+          isSelected: selectedSquare == square,
+          isWhiteSquare: (square ~/ 16 + square % 16) % 2 == 0,
+          piece: chess.board[square],
           onTap: () => onSquareSelected?.call(square),
-          rankLabel: rankLabel,
-          fileLabel: fileLabel,
-          isInCheck: isInCheck,
-          checkHighlightColor: checkHighlightColor,
+          rankLabel: index % 8 == 0 
+              ? (isFlipped ? (index ~/ 8 + 1).toString() : (8 - index ~/ 8).toString())
+              : null,
+          fileLabel: index >= 56 
+              ? String.fromCharCode(isFlipped ? 104 - (index % 8) : 97 + (index % 8))
+              : null,
+          isInCheck: checkHighlight == square,
+          highlightColor: isValidMove 
+              ? const Color(0x5563B5E5) // Different color for valid moves
+              : const Color(0x5533B5E5), // Original color for last move
         );
       },
     );
