@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'chess.dart' as chess_lib;
 
 class Square extends StatelessWidget {
-  final bool isHighlighted;
+  final Color? highlightColor;
   final bool isSelected;
   final bool isWhiteSquare;
   final chess_lib.Piece? piece;
@@ -10,12 +10,11 @@ class Square extends StatelessWidget {
   final String? rankLabel;
   final String? fileLabel;
   final bool isInCheck;
-  final Color highlightColor;
   final Color checkHighlightColor;
 
   const Square({
     super.key,
-    required this.isHighlighted,
+    this.highlightColor,
     required this.isSelected,
     required this.isWhiteSquare,
     required this.piece,
@@ -23,7 +22,6 @@ class Square extends StatelessWidget {
     this.rankLabel,
     this.fileLabel,
     this.isInCheck = false,
-    this.highlightColor = const Color(0x5533B5E5),
     this.checkHighlightColor = const Color(0x55FF0000),
   });
 
@@ -56,26 +54,32 @@ class Square extends StatelessWidget {
               child: Container(color: checkHighlightColor),
             ),
           
-          if (isHighlighted || isSelected)
+          if (highlightColor != null)
+            Positioned.fill(
+              child: Container(
+                color: highlightColor,
+              ),
+            ),
+
+          if (isSelected)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: isHighlighted ? highlightColor : Colors.transparent,
-                  border: isSelected 
-                      ? Border.all(color: highlightColor, width: 2) 
-                      : null,
-                  boxShadow: [
-                    if (isHighlighted || isSelected)
-                      BoxShadow(
-                        color: Color.fromARGB(139, 138, 138, 138),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                      ),
+                  border: Border.all(
+                    color: const Color.fromARGB(139, 138, 138, 138),
+                    width: 2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromARGB(139, 138, 138, 138),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                    ),
                   ],
                 ),
               ),
             ),
-          
+
           if (piece != null)
             Positioned.fill(
               child: Image.asset(
@@ -127,6 +131,7 @@ class ChessBoard extends StatelessWidget {
   final void Function(int)? onSquareSelected;
   final int? checkHighlight;
   final chess_lib.Move? lastMove;
+  final chess_lib.Move? engineSuggestion;
 
   const ChessBoard({
     super.key,
@@ -137,6 +142,7 @@ class ChessBoard extends StatelessWidget {
     required this.onSquareSelected,
     this.checkHighlight,
     this.lastMove,
+    this.engineSuggestion,
   });
 
   int _gridIndexToSquare(int index) {
@@ -158,9 +164,22 @@ class ChessBoard extends StatelessWidget {
         final isFrom = lastMove?.from == square;
         final isTo = lastMove?.to == square;
         final isValidMove = validMoves.any((m) => m.to == square);
+        final isEngineSuggestion = engineSuggestion != null && 
+            (engineSuggestion!.from == square || engineSuggestion!.to == square);
+
+        Color? highlightColor;
+        if (checkHighlight == square) {
+          highlightColor = const Color(0x55FF0000); // Red for check
+        } else if (isEngineSuggestion) {
+          highlightColor = const Color(0x5500FF00); // Green for engine suggestion
+        } else if (isFrom || isTo) {
+          highlightColor = const Color(0x5533B5E5); // Blue for last move
+        } else if (isValidMove) {
+          highlightColor = const Color(0x5563B5E5); // Light blue for valid moves
+        }
 
         return Square(
-          isHighlighted: isFrom || isTo || isValidMove,
+          highlightColor: highlightColor,
           isSelected: selectedSquare == square,
           isWhiteSquare: (square ~/ 16 + square % 16) % 2 == 0,
           piece: chess.board[square],
@@ -172,9 +191,6 @@ class ChessBoard extends StatelessWidget {
               ? String.fromCharCode(isFlipped ? 104 - (index % 8) : 97 + (index % 8))
               : null,
           isInCheck: checkHighlight == square,
-          highlightColor: isValidMove 
-              ? const Color(0x5563B5E5) // Different color for valid moves
-              : const Color(0x5533B5E5), // Original color for last move
         );
       },
     );

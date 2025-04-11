@@ -29,3 +29,5 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
+// add hint state, no need to send new one if a hint is already calculated, and check engine conflict stuffs
