@@ -18,11 +18,10 @@ class _GamePageState extends State<GamePage> {
   int _opponentElo = 2000;
   int? selectedSquare;
   List<chess_lib.Move> validMoves = [];
-  bool isEngineThinking = false;
+  bool isEngineActive = false;
   chess_lib.Move? lastMove;
   chess_lib.Move? engineSuggestedMove;
   bool showEngineHint = false;
-  bool isHintCalculating = false;
 
   @override
   void initState() {
@@ -42,31 +41,37 @@ class _GamePageState extends State<GamePage> {
     gameStarted = false;
     selectedSquare = null;
     validMoves = [];
-    isEngineThinking = false;
+    isEngineActive = false;
     lastMove = null;
     engineSuggestedMove = null;
-    isHintCalculating = false;
+  }
+
+  void _getEngineMove(int elo) {
+    if (!isEngineActive) {
+      setState(() => isEngineActive = true);
+      stockfishEngine.getMove(chess.fen, elo);
+    }
   }
 
   void _startGame() {
     setState(() {
       gameStarted = true;
-      if (isPlayerAsBlack) _getEngineMove();
+      if (isPlayerAsBlack) _getEngineMove(_opponentElo);
     });
   }
 
   void _handleEngineMove(String moveUci) {
-    if (isHintCalculating) {
-      setState(() {
-        isHintCalculating = false;
+    setState(() {
+      isEngineActive = false;
+      final isPlayerTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
+                          (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE);
+      
+      if (isPlayerTurn) {
         _parseEngineSuggestion(moveUci);
-      });
-    } else {
-      setState(() {
-        isEngineThinking = false;
+      } else {
         _parseEngineMove(moveUci);
-      });
-    }
+      }
+    });
   }
 
   void _parseEngineSuggestion(String moveUci) {
@@ -95,26 +100,10 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
-  void _getEngineMove() {
-    if (!isEngineThinking) {
-      setState(() => isEngineThinking = true);
-      stockfishEngine.getMove(chess.fen, _opponentElo);
-    }
-  }
-
-  void _getEngineSuggestion() {
-    if (!isHintCalculating) {
-      setState(() => isHintCalculating = true);
-      stockfishEngine.getMove(chess.fen, 3600); // Max strength for hints
-    }
-  }
-
   void _handleSquareTap(int square) {
-    if (!gameStarted || isEngineThinking) return;
-
+    if (!gameStarted || isEngineActive) return;
     final isPlayerTurn = (isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK) ||
                         (!isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE);
-    
     if (!isPlayerTurn) return;
 
     setState(() {
@@ -149,19 +138,19 @@ class _GamePageState extends State<GamePage> {
     } else if (mounted) {
       if ((isPlayerAsBlack && chess.turn == chess_lib.Color.WHITE) ||
           (!isPlayerAsBlack && chess.turn == chess_lib.Color.BLACK)) {
-        _getEngineMove();
+        _getEngineMove(_opponentElo);
       } else if (showEngineHint) {
-        _getEngineSuggestion();
+        if (engineSuggestedMove == null) {
+          _getEngineMove(3600);
+        }
       }
     }
   }
 
   void _handleUndo() {
-    if (!gameStarted || isEngineThinking) return;
-
+    if (!gameStarted || isEngineActive) return;
     final firstUndo = chess.undo_move();
     final secondUndo = chess.undo_move();
-
     if (firstUndo != null && secondUndo != null) {
       setState(() {
         lastMove = null;
@@ -214,13 +203,11 @@ class _GamePageState extends State<GamePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: isEngineThinking 
-            ? const Text("Engine is thinking...")
-            : isHintCalculating
-                ? const Text("Calculating hint...")
-                : const Text('Chess'),
+        title: isEngineActive 
+            ? const Text("Engine is calculating...")
+            : const Text('Chess'),
         actions: [
-          if (isEngineThinking || isHintCalculating)
+          if (isEngineActive)
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
@@ -269,7 +256,7 @@ class _GamePageState extends State<GamePage> {
           AspectRatio(
             aspectRatio: 1,
             child: AbsorbPointer(
-              absorbing: isEngineThinking,
+              absorbing: isEngineActive,
               child: ChessBoard(
                 chess: chess,
                 selectedSquare: selectedSquare,
@@ -298,23 +285,17 @@ class _GamePageState extends State<GamePage> {
                     const SizedBox(width: 80),
                   if (gameStarted && isPlayerTurn)
                     TextButton.icon(
-                      icon: isHintCalculating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.lightbulb_outline, size: 20),
+                      icon: const Icon(Icons.lightbulb_outline, size: 20),
                       label: Text(showEngineHint ? 'Hide Hint' : 'Show Hint'),
                       onPressed: () {
-                        setState(() {
-                          showEngineHint = !showEngineHint;
-                          if (showEngineHint) {
-                            _getEngineSuggestion();
-                          } else {
-                            engineSuggestedMove = null;
-                          }
-                        });
+                        if (!isEngineActive) {
+                          setState(() {
+                            showEngineHint = !showEngineHint;
+                            if (showEngineHint && engineSuggestedMove == null) {
+                              _getEngineMove(3600);
+                            }
+                          });
+                        }
                       },
                     ),
                 ],
