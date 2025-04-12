@@ -3,8 +3,14 @@ import 'stockfish_engine.dart';
 import 'chess.dart' as chess_lib;
 import 'chess_board.dart';
 
+
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  final StockfishEngine stockfishEngine;
+  
+  const GamePage({
+    super.key,
+    required this.stockfishEngine,
+  });
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -26,14 +32,9 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
-    _initializeGame();
-    _initStockfish();
-  }
-
-  void _initStockfish() async {
-    stockfishEngine = StockfishEngine();
+    stockfishEngine = widget.stockfishEngine;
     stockfishEngine.onBestMoveReceived = _handleEngineMove;
-    await stockfishEngine.initialize();
+    _initializeGame();
   }
 
   void _initializeGame() {

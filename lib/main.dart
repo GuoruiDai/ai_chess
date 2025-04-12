@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'game_page.dart';
+import 'loading_page.dart';
 
 
 void main() {
@@ -17,17 +17,14 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[900],
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[850],
-          foregroundColor: Colors.white,  // For icons and text
+          foregroundColor: Colors.white,
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white),
           bodyMedium: TextStyle(color: Colors.white),
         ),
       ),
-      home: GamePage(),
+      home: const LoadingPage(),
     );
   }
 }
-
-
-// add hint state, no need to send new one if a hint is already calculated, and check engine conflict stuffs
